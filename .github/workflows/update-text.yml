@@ -22,20 +22,24 @@ jobs:
 
           python3 <<EOF
           import json
+          import asyncio
           from telegram import Bot
 
-          bot = Bot(token="${{ env.TELEGRAM_BOT_TOKEN }}")
-          updates = bot.get_updates(limit=10)
-          text_cards = []
+          async def main():
+              bot = Bot(token="${{ env.TELEGRAM_BOT_TOKEN }}")
+              updates = await bot.get_updates(limit=10)  # <-- await обязательно
+              text_cards = []
 
-          for u in updates:
-              if u.channel_post and str(u.channel_post.chat.id) == "${{ env.TELEGRAM_CHANNEL_ID }}":
-                  paragraphs = u.channel_post.text.split("\n\n")
-                  text_cards = paragraphs
-                  break
+              for u in updates:
+                  if u.channel_post and str(u.channel_post.chat.id) == "${{ env.TELEGRAM_CHANNEL_ID }}":
+                      paragraphs = u.channel_post.text.split("\n\n")
+                      text_cards = paragraphs
+                      break
 
-          with open("text.json", "w", encoding="utf-8") as f:
-              json.dump(text_cards, f, ensure_ascii=False)
+              with open("text.json", "w", encoding="utf-8") as f:
+                  json.dump(text_cards, f, ensure_ascii=False)
+
+          asyncio.run(main())
           EOF
 
       - name: Commit and Push
