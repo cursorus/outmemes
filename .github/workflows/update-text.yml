@@ -1,0 +1,47 @@
+name: Update Text Cloud
+
+on:
+  workflow_dispatch:  # вручную
+  schedule:
+    - cron: '*/30 * * * *'  # опционально, можно каждые 30 минут
+
+jobs:
+  update-text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Получить текст из Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip
+          pip3 install python-telegram-bot requests
+
+          python3 <<EOF
+          import json
+          from telegram import Bot
+
+          bot = Bot(token="${{ env.TELEGRAM_BOT_TOKEN }}")
+          updates = bot.get_updates(limit=10)
+          text_cards = []
+
+          for u in updates:
+              if u.channel_post and str(u.channel_post.chat.id) == "${{ env.TELEGRAM_CHANNEL_ID }}":
+                  paragraphs = u.channel_post.text.split("\n\n")
+                  text_cards = paragraphs
+                  break
+
+          with open("text.json", "w", encoding="utf-8") as f:
+              json.dump(text_cards, f, ensure_ascii=False)
+          EOF
+
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add text.json
+          git commit -m "Update text.json"
+          git push
