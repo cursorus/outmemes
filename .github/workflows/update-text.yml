@@ -1,9 +1,9 @@
 name: Update Text Cloud
 
 on:
-  workflow_dispatch:  # вручную
+  workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'  # опционально, можно каждые 30 минут
+    - cron: '*/30 * * * *'
 
 jobs:
   update-text:
